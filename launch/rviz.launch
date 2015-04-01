@@ -1,0 +1,4 @@
+<launch>
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find dslviz)/launch/dslviz.rviz" required="true" />
+
+</launch>
