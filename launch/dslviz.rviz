@@ -56,7 +56,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /dsl/occupancy_map
+      Marker Topic: /dsl_grid3d/occupancy_map
       Name: Occupancy Grid
       Namespaces:
         {}
@@ -64,10 +64,10 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /dsl/map_mesh
+      Marker Topic: /dsl_grid3d/mesh
       Name: Map
       Namespaces:
-        dsl: true
+        {}
       Queue Size: 1
       Value: true
     - Alpha: 1
@@ -76,7 +76,7 @@ Visualization Manager:
       Color: 25; 255; 0
       Enabled: true
       Name: Path
-      Topic: /dsl/path
+      Topic: /dsl_grid3d/path
       Value: true
     - Alpha: 1
       Buffer Length: 1
@@ -84,7 +84,7 @@ Visualization Manager:
       Color: 0; 170; 255
       Enabled: true
       Name: Optimized Path
-      Topic: /dsl/optpath
+      Topic: /dsl_grid3d/optpath
       Value: true
     - Alpha: 1
       Buffer Length: 1
@@ -92,7 +92,7 @@ Visualization Manager:
       Color: 25; 255; 0
       Enabled: true
       Name: Spline Path
-      Topic: /dsl/smoothpath
+      Topic: /dsl_grid3d/splinepath
       Value: true
   Enabled: true
   Global Options:
@@ -151,5 +151,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 927
-  X: 979
+  X: 972
   Y: 24

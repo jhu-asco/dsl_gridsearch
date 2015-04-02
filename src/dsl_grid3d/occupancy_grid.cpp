@@ -52,4 +52,33 @@ Vector3i OccupancyGrid::positionToGrid(const Vector3d& p)
   return g;
 }
 
+int OccupancyGrid::getLength()
+{
+  return length_;
+}
+
+int OccupancyGrid::getWidth()
+{
+  return width_;
+}
+
+int OccupancyGrid::getHeight()
+{
+  return height_;
+}
+  
+double* OccupancyGrid::getOccupancyMap()
+{
+  return occupancy_map_;
+}
+
+Vector3d OccupancyGrid::getPmin()
+{
+  return pmin_;
+}
+Vector3d OccupancyGrid::getPmax()
+{
+  return pmax_;
+}
+
 } // namespace

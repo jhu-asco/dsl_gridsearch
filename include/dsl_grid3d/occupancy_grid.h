@@ -20,6 +20,8 @@ public:
   int positionToIndex(const Eigen::Vector3d& p);
   Eigen::Vector3i positionToGrid(const Eigen::Vector3d& p);
 
+  Eigen::Vector3d getPmin();
+  Eigen::Vector3d getPmax();
   int getLength();
   int getWidth();
   int getHeight();
@@ -33,6 +35,7 @@ private:
   double scale_;
   Eigen::Vector3d pmin_;
   Eigen::Vector3d pmax_;
+
 
 };
 
