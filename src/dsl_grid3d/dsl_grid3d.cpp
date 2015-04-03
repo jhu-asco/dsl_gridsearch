@@ -11,13 +11,13 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   nh_private_(nh_private),
   mesh_filename_("")
 {
-  if (!nh_private.getParam ("mesh_filename", mesh_filename_))
+  if (!nh_private_.getParam ("mesh_filename", mesh_filename_))
     mesh_filename_ = "";
-  if (!nh_private.getParam ("cells_per_meter", cells_per_meter_))
+  if (!nh_private_.getParam ("cells_per_meter", cells_per_meter_))
     cells_per_meter_ = 1.;
-  if (!nh_private.getParam ("spline_path_maxvelocity", spline_path_maxvelocity_))
+  if (!nh_private_.getParam ("spline_path_maxvelocity", spline_path_maxvelocity_))
     spline_path_maxvelocity_ = 1.;
-  if (!nh_private.getParam ("use_textured_mesh", use_textured_mesh_))
+  if (!nh_private_.getParam ("use_textured_mesh", use_textured_mesh_))
     use_textured_mesh_ = false;
 
   if(mesh_filename_ != "")
@@ -26,14 +26,19 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
     MeshUtility::meshToOccupancyGrid(mesh_filename_, cells_per_meter_, &ogrid_);
     ROS_INFO("Loaded succesfully");
 
-    mesh_marker_pub_ = nh.advertise<visualization_msgs::Marker>( "/dsl_grid3d/mesh",  0);
-    publishMesh();
+    mesh_marker_pub_ = nh_.advertise<visualization_msgs::Marker>( "/dsl_grid3d/mesh",  0);
   }
   else
   {
     ROS_INFO("Loading blank occupancy map");
     // TODO: Allow user to add lwh and size as parameters, will be overriden if loading mesh
   }
+
+  occ_map_viz_pub_ = nh_.advertise<visualization_msgs::Marker>( "/dsl_grid3d/occupancy_map",  0);
+  path_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/path",  0);
+  optpath_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/optpath",  0);
+  splinepath_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/splinepath",  0);
+  splineoptpath_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/splineoptpath",  0);
 
   //Perform dsl gridsearch3D
   ROS_INFO("Building search graph...");
@@ -42,14 +47,12 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   gdsl_->SetGoal(0, 0, 0);
   ROS_INFO("Graph built");
 
-  occ_map_viz_pub_ = nh_.advertise<visualization_msgs::Marker>( "/dsl_grid3d/occupancy_map",  0);
-  path_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/path",  0);
-  optpath_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/optpath",  0);
-  splinepath_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/splinepath",  0);
-  splineoptpath_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/splineoptpath",  0);
-
   publishAllPaths();
   publishOccupancyGrid();
+  if(mesh_filename_ != "")
+  {
+    publishMesh();
+  }
 
   ROS_INFO("Published occupancy grid");
 
@@ -58,7 +61,12 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   set_occupied_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_occupied", 10, &DslGrid3D::handleSetOccupied, this, ros::TransportHints().tcpNoDelay());
   set_unoccupied_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_unoccupied", 10, &DslGrid3D::handleSetUnoccupied, this, ros::TransportHints().tcpNoDelay());
 
-  //TODO: try spinner... 
+  //timer = nh_private_.createTimer(ros::Duration(0.1), &DslGrid3D::spin, this);
+  //ROS_INFO("Spinner started");
+}
+
+void DslGrid3D::spin(const ros::TimerEvent& e)
+{
 }
 
 void DslGrid3D::handleSetStart(const geometry_msgs::PointConstPtr& msg)
@@ -165,13 +173,13 @@ void DslGrid3D::publishMesh()
 
     std::string map_fn(mesh_filename_);
     unsigned int found = map_fn.find_last_of(".");
-    std::string texture_fn =  map_fn.substr(0,found) + std::string(".dae");
+    std::string texture_fn =  std::string("file://") + map_fn.substr(0,found) + std::string(".dae");
     marker.mesh_resource = texture_fn;
     std::cout << "Using textured mesh: " << texture_fn << std::endl;
   }
   else
   {
-    marker.mesh_resource = std::string(mesh_filename_);
+    marker.mesh_resource = std::string("file://") + std::string(mesh_filename_);
   }
 
   mesh_marker_pub_.publish( marker );
@@ -195,6 +203,7 @@ void DslGrid3D::publishOccupancyGrid()
         assert(!(idx >= length*width*height || idx < 0));
         if(ogrid_->getOccupancyMap()[idx] == DSL_OCCUPIED)
         {
+          //std::cout << "pt occupied: " << x << " " << y << " " << z << std::endl;
           geometry_msgs::Point pt;
           pt.x = x/cells_per_meter_;
           pt.y = y/cells_per_meter_;
@@ -204,7 +213,7 @@ void DslGrid3D::publishOccupancyGrid()
       }  
     }
   }
-  
+
   occmap_viz.header.frame_id = "/world";
   occmap_viz.header.stamp = ros::Time();
   occmap_viz.ns = "dsl_grid3d";

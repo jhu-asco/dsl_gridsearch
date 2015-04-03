@@ -22,6 +22,7 @@ private:
   void handleSetGoal(const geometry_msgs::PointConstPtr& msg);
   void handleSetOccupied(const geometry_msgs::PointConstPtr& msg);
   void handleSetUnoccupied(const geometry_msgs::PointConstPtr& msg);
+  void spin(const ros::TimerEvent& e);
 
   void publishAllPaths();
   void publishMesh();
@@ -49,6 +50,8 @@ private:
   ros::Subscriber set_goal_sub_;
   ros::Subscriber set_occupied_sub_;
   ros::Subscriber set_unoccupied_sub_;
+
+  ros::Timer timer;
 
   std::string mesh_filename_;
   double cells_per_meter_;
