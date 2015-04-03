@@ -29,7 +29,8 @@ private:
   void publishOccupancyGrid();
 
   void planAllPaths();
-  nav_msgs::Path dslPathToRosMsg(const dsl::GridPath3D &dsl_path);
+  nav_msgs::Path dslPathToRosMsg(const dsl::GridPath3D& dsl_path);
+  bool isPosInBounds(const Eigen::Vector3d& pos);
 
   dsl::GridSearch3D* gdsl_;
   dsl::GridPath3D path_, optpath_;

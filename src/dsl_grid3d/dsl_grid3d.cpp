@@ -34,6 +34,8 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
     // TODO: Allow user to add lwh and size as parameters, will be overriden if loading mesh
   }
 
+  std::cout << "Grid Bounds: " << ogrid_->getPmin().transpose() << " and " << ogrid_->getPmax().transpose() << std:: endl;
+
   occ_map_viz_pub_ = nh_.advertise<visualization_msgs::Marker>( "/dsl_grid3d/occupancy_map",  0);
   path_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/path",  0);
   optpath_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/optpath",  0);
@@ -71,44 +73,91 @@ void DslGrid3D::spin(const ros::TimerEvent& e)
 
 void DslGrid3D::handleSetStart(const geometry_msgs::PointConstPtr& msg)
 {
+  Eigen::Vector3d wpos(msg->x, msg->y, msg->z);
+
+  if(!isPosInBounds(wpos))
+  {
+    ROS_WARN("handleSetStart: Position %f %f %f out of bounds!", wpos(0), wpos(1), wpos(2));
+    return;
+  }
+ 
+  ROS_INFO("Set start pos: %f %f %f", wpos(0), wpos(1), wpos(2));
   Eigen::Vector3i pos = ogrid_->positionToGrid(Eigen::Vector3d(msg->x, msg->y, msg->z));
   gdsl_->SetStart(pos(0), pos(1), pos(2));
 
   planAllPaths();
+  publishAllPaths();
 }
 void DslGrid3D::handleSetGoal(const geometry_msgs::PointConstPtr& msg)
 {
+  Eigen::Vector3d wpos(msg->x, msg->y, msg->z);
+
+  if(!isPosInBounds(wpos))
+  {
+    ROS_WARN("handleSetGoal: Position %f %f %f out of bounds!", wpos(0), wpos(1), wpos(2));
+    return;
+  } 
+
+  ROS_INFO("Set goal pos: %f %f %f", wpos(0), wpos(1), wpos(2));
   Eigen::Vector3i pos = ogrid_->positionToGrid(Eigen::Vector3d(msg->x, msg->y, msg->z));
   gdsl_->SetGoal(pos(0), pos(1), pos(2));
 
   planAllPaths();
+  publishAllPaths();
 }
 void DslGrid3D::handleSetOccupied(const geometry_msgs::PointConstPtr& msg)
 {
   Eigen::Vector3d wpos(msg->x, msg->y, msg->z);
+
+  if(!isPosInBounds(wpos))
+  {
+    ROS_WARN("handleSetOccupied: Position %f %f %f out of bounds!", wpos(0), wpos(1), wpos(2));
+    return;
+  } 
+
   Eigen::Vector3i gpos = ogrid_->positionToGrid(wpos);
   ogrid_->setOccupied(wpos, true);
   gdsl_->SetCost(gpos(0), gpos(1), gpos(2), DSL_OCCUPIED);
 
+  std::cout << "Set Occupied pos: " << wpos.transpose() << std::endl;
+
   publishOccupancyGrid();
   planAllPaths();
+  publishAllPaths();
 }
 void DslGrid3D::handleSetUnoccupied(const geometry_msgs::PointConstPtr& msg)
 {
   Eigen::Vector3d wpos(msg->x, msg->y, msg->z);
+
+  if(!isPosInBounds(wpos))
+  {
+    ROS_WARN("handleSetUnoccupied: Position %f %f %f out of bounds!", wpos(0), wpos(1), wpos(2));
+    return;
+  } 
+
   Eigen::Vector3i gpos = ogrid_->positionToGrid(wpos);
   ogrid_->setOccupied(wpos, false);
   gdsl_->SetCost(gpos(0), gpos(1), gpos(2), 0);
 
+  std::cout << "Set Unoccupied pos: " << wpos.transpose() << std::endl;
+
   publishOccupancyGrid();
   planAllPaths();
+  publishAllPaths();
+}
+
+bool DslGrid3D::isPosInBounds(const Eigen::Vector3d& pos)
+{
+  Eigen::Vector3d pmin = ogrid_->getPmin();
+  Eigen::Vector3d pmax = ogrid_->getPmax();
+  return (pos(0) >= pmin(0) && pos(1) >= pmin(1) && pos(2) >= pmin(2) && pos(0) <= pmax(0) && pos(1) <= pmax(1) && pos(2) <= pmax(2));
 }
 
 void DslGrid3D::planAllPaths()
 {
   gdsl_->Plan(path_);
   gdsl_->OptPath(path_, optpath_);
-  //gdsl_->SmoothPathOptCost(path_, splinepath_, spline_path_maxvelocity_*cells_per_meter_/10., .4);
+  gdsl_->SmoothPathSpline(path_, splinepath_, spline_path_maxvelocity_*cells_per_meter_/10., .4);
   gdsl_->SmoothPathSpline(optpath_, splineoptpath_, spline_path_maxvelocity_*cells_per_meter_/10., .4);
 }
 
