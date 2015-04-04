@@ -14,7 +14,9 @@ class OccupancyGrid
 {
 public:
   OccupancyGrid(double* occupancy_map, int length, int width, int height, Eigen::Vector3d pmin, Eigen::Vector3d pmax, double scale);
+  OccupancyGrid(int length, int width, int height, Eigen::Vector3d pmin, Eigen::Vector3d pmax, double scale);
 
+  void mergeGrid(OccupancyGrid* ogrid);
   bool isOccupied(const Eigen::Vector3d& p);
   void setOccupied(const Eigen::Vector3d& p, bool set);
   int positionToIndex(const Eigen::Vector3d& p);
@@ -22,6 +24,7 @@ public:
 
   Eigen::Vector3d getPmin();
   Eigen::Vector3d getPmax();
+  double getScale();
   int getLength();
   int getWidth();
   int getHeight();

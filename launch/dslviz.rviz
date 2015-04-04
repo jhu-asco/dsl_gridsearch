@@ -11,7 +11,7 @@ Panels:
         - /Map1
         - /Path1
         - /Optimized Path1
-        - /Spline Path1
+        - /Spline Optimized Path1
       Splitter Ratio: 0.5
     Tree Height: 747
   - Class: rviz/Selection
@@ -59,7 +59,7 @@ Visualization Manager:
       Marker Topic: /dsl_grid3d/occupancy_map
       Name: Occupancy Grid
       Namespaces:
-        {}
+        dsl_grid3d: true
       Queue Size: 1
       Value: true
     - Class: rviz/Marker
@@ -67,7 +67,7 @@ Visualization Manager:
       Marker Topic: /dsl_grid3d/mesh
       Name: Map
       Namespaces:
-        {}
+        dsl_grid3d: true
       Queue Size: 1
       Value: true
     - Alpha: 1
@@ -94,6 +94,14 @@ Visualization Manager:
       Name: Spline Path
       Topic: /dsl_grid3d/splinepath
       Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 0; 0; 127
+      Enabled: true
+      Name: Spline Optimized Path
+      Topic: /dsl_grid3d/splineoptpath
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -118,7 +126,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 81.2963
+      Distance: 64.2941
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -130,10 +138,10 @@ Visualization Manager:
         Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.879797
+      Pitch: 0.654798
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.31358
+      Yaw: 2.39858
     Saved: ~
 Window Geometry:
   Displays:
@@ -151,5 +159,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 927
-  X: 972
+  X: 965
   Y: 24

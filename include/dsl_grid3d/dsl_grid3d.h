@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Point.h>
+#include <shape_msgs/Mesh.h>
 #include <nav_msgs/Path.h>
 
 #include "dsl/gridsearch3d.h"
@@ -22,6 +23,7 @@ private:
   void handleSetGoal(const geometry_msgs::PointConstPtr& msg);
   void handleSetOccupied(const geometry_msgs::PointConstPtr& msg);
   void handleSetUnoccupied(const geometry_msgs::PointConstPtr& msg);
+  void handleAddMesh(const shape_msgs::MeshConstPtr& msg);
   void spin(const ros::TimerEvent& e);
 
   void publishAllPaths();
@@ -58,6 +60,9 @@ private:
   double cells_per_meter_;
   double spline_path_maxvelocity_;
   bool use_textured_mesh_;
+  int grid_length_;
+  int grid_width_;
+  int grid_height_;
 };
 
 

@@ -19,6 +19,12 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
     spline_path_maxvelocity_ = 1.;
   if (!nh_private_.getParam ("use_textured_mesh", use_textured_mesh_))
     use_textured_mesh_ = false;
+  if (!nh_private_.getParam ("grid_length", grid_length_))
+    grid_length_ = 10;
+  if (!nh_private_.getParam ("grid_width", grid_width_))
+    grid_width_ = 10;
+  if (!nh_private_.getParam ("grid_height", grid_height_))
+    grid_height_ = 10;
 
   if(mesh_filename_ != "")
   {
@@ -30,8 +36,8 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   }
   else
   {
-    ROS_INFO("Loading blank occupancy map");
-    // TODO: Allow user to add lwh and size as parameters, will be overriden if loading mesh
+    ROS_INFO("Loading blank occupancy map with dimensions: %d %d %d", grid_length_, grid_width_, grid_height_);
+    ogrid_ = new OccupancyGrid(grid_length_, grid_width_, grid_height_, Eigen::Vector3d(0,0,0), Eigen::Vector3d(grid_length_, grid_width_, grid_height_/cells_per_meter_) , cells_per_meter_);
   }
 
   std::cout << "Grid Bounds: " << ogrid_->getPmin().transpose() << " and " << ogrid_->getPmax().transpose() << std:: endl;
@@ -146,6 +152,14 @@ void DslGrid3D::handleSetUnoccupied(const geometry_msgs::PointConstPtr& msg)
   publishAllPaths();
 }
 
+void DslGrid3D::handleAddMesh(const shape_msgs::MeshConstPtr& msg)
+{
+  OccupancyGrid* new_ogrid;
+  MeshUtility::meshToOccupancyGrid(msg, cells_per_meter_, &new_ogrid);
+  ogrid_->mergeGrid(new_ogrid);
+  delete new_ogrid; 
+}
+
 bool DslGrid3D::isPosInBounds(const Eigen::Vector3d& pos)
 {
   Eigen::Vector3d pmin = ogrid_->getPmin();
@@ -224,7 +238,7 @@ void DslGrid3D::publishMesh()
     unsigned int found = map_fn.find_last_of(".");
     std::string texture_fn =  std::string("file://") + map_fn.substr(0,found) + std::string(".dae");
     marker.mesh_resource = texture_fn;
-    std::cout << "Using textured mesh: " << texture_fn << std::endl;
+    ROS_INFO("Using textured mesh: %s", texture_fn.c_str());
   }
   else
   {
