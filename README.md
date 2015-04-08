@@ -36,6 +36,7 @@ Launch the dsl_grid3d main ros node and load a mesh:
 * `/dsl_grid3d/set_start`: [geometry_msgs::Point] Used to set the goal position.
 * `/dsl_grid3d/set_occupied`: [geometry_msgs::Point] Used to set a position as occupied.
 * `/dsl_grid3d/set_unoccupied`: [geometry_msgs::Point] Used to set a position as unoccupied.
+* `/dsl_grid3d/set_mesh_occupied`: [shape_msgs::Mesh] Used to set cells intersecting with a mesh as occupied.
 
 ## 3.2 Published 
 * `/dsl_grid3d/occupancy_map`: [visualization_msgs::Marker] A marker for the occupancy grid to be displayed in Rviz.
