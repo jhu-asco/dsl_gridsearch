@@ -53,6 +53,7 @@ private:
   ros::Subscriber set_goal_sub_;
   ros::Subscriber set_occupied_sub_;
   ros::Subscriber set_unoccupied_sub_;
+  ros::Subscriber set_mesh_occupied_sub_;
 
   ros::Timer timer;
 

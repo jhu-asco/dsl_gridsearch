@@ -32,6 +32,11 @@ OccupancyGrid::OccupancyGrid(int length, int width, int height, Vector3d pmin, V
   } 
 }
 
+OccupancyGrid::~OccupancyGrid()
+{
+  delete[] occupancy_map_;
+}
+
 bool OccupancyGrid::isOccupied(const Vector3i& gp)
 {
   assert(gp(0) >= 0 && gp(0) < length_ && 

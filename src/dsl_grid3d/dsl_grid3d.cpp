@@ -122,6 +122,7 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   set_goal_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_goal", 10, &DslGrid3D::handleSetGoal, this, ros::TransportHints().tcpNoDelay());
   set_occupied_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_occupied", 10, &DslGrid3D::handleSetOccupied, this, ros::TransportHints().tcpNoDelay());
   set_unoccupied_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_unoccupied", 10, &DslGrid3D::handleSetUnoccupied, this, ros::TransportHints().tcpNoDelay());
+  set_mesh_occupied_sub_ = nh_.subscribe<shape_msgs::Mesh>("/dsl_grid3d/set_mesh_occupied", 10, &DslGrid3D::handleAddMesh, this, ros::TransportHints().tcpNoDelay());
 
   //timer = nh_private_.createTimer(ros::Duration(0.1), &DslGrid3D::spin, this);
   //ROS_INFO("Spinner started");
