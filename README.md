@@ -1,5 +1,7 @@
 # DSL Grid3D: D*-lite on a uniformly spaced 3D grid
 
+This is an implementation of D*-lite graph search on a uniformly spaced 3D grid for use in global path planning.  This package provides the ability to create an occupancy grid from a .stl mesh or to specify a grid of a given size.  The user can specify start and goal positions by publishing to the relevant topics. The generated paths are published by the given node.  The user can also publish messages to set grid cells to be occupied or unoccupied, or mesh messages can be sent to set all cells which intersect with the mesh as occupied.
+
 # 1 Installation
 We tested DSL Grid3D on Ubuntu 12.04 (Precise) and ROS hydro.
 
@@ -15,6 +17,7 @@ Install the included dsl library
     cmake ..
     sudo make install
 
+Run catkin_make from the root directory, as usual.
 
 
 # 2 Quickstart / Minimal Setup
@@ -23,16 +26,15 @@ Launch the rviz viewer:
 
 		roslaunch dsl_grid3d rviz.launch
 
-Launch the dsl_grid3d main ros node:
+Launch the dsl_grid3d main ros node and load a mesh:
 
 		roslaunch dsl_grid3d dsl_grid3d_campus.launch
 
-Run catkin_make from the root directory.
 
 
 
-### 3 Parameters
-User must specify either a mesh to load or the size of the occupancy grid.  If both are given, the mesh will be loaded into an occupancy grid of the size given.
+# 3 Parameters
+The user must specify either a mesh to load or the size of the occupancy grid.  If both are given, the mesh will be loaded into an occupancy grid of the size given.
 
 * `mesh_filename`: [string] Absolute filepath of a .stl mesh to be loaded into an occupancy grid at runtime.
 * `cells_per_meter`: [double] The resolution of the occupancy grid in cells/meter.
