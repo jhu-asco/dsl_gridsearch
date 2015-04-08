@@ -32,12 +32,27 @@ OccupancyGrid::OccupancyGrid(int length, int width, int height, Vector3d pmin, V
   } 
 }
 
+bool OccupancyGrid::isOccupied(const Vector3i& gp)
+{
+  assert(gp(0) >= 0 && gp(0) < length_ && 
+         gp(1) >= 0 && gp(1) < width_ && 
+         gp(2) >= 0 && gp(2) < height_);
+  return occupancy_map_[gp(0) + gp(1)*length_ + gp(2)*length_*width_] > 0; 
+}
+
 bool OccupancyGrid::isOccupied(const Vector3d& p)
 {
   int idx = positionToIndex(p);
   assert((idx >= 0) && (idx < length_*width_*height_));
 
   return occupancy_map_[idx] > 0;
+}
+
+bool OccupancyGrid::isInGrid(const Eigen::Vector3i& gp)
+{
+  return gp(0) >= 0 && gp(0) < length_ &&
+         gp(1) >= 0 && gp(1) < width_ && 
+         gp(2) >= 0 && gp(2) < height_;
 }
 
 void OccupancyGrid::setOccupied(const Vector3d& p, bool set)
@@ -65,6 +80,17 @@ Vector3i OccupancyGrid::positionToGrid(const Vector3d& p)
   Vector3d offset = (p-pmin_)*scale_;
   Vector3i g((int)floor(offset(0)), (int)floor(offset(1)),(int)floor(offset(2)));
   return g;
+}
+
+Vector3d OccupancyGrid::gridToPosition(const Vector3i& gp)
+{
+  double xmin = this->getPmin()(0);
+  double ymin = this->getPmin()(1);
+  double zmin = this->getPmin()(2);
+  double offset = 1.0/(2*scale_);
+  return Vector3d(gp(0)/scale_ + offset + xmin,  
+                  gp(1)/scale_ + offset + ymin, 
+                  gp(2)/scale_ + offset + zmin);
 }
 
 int OccupancyGrid::getLength()

@@ -11,6 +11,8 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   nh_private_(nh_private),
   mesh_filename_("")
 {
+  double grid_xmin, grid_ymin, grid_zmin;
+
   if (!nh_private_.getParam ("mesh_filename", mesh_filename_))
     mesh_filename_ = "";
   if (!nh_private_.getParam ("cells_per_meter", cells_per_meter_))
@@ -20,14 +22,27 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   if (!nh_private_.getParam ("use_textured_mesh", use_textured_mesh_))
     use_textured_mesh_ = false;
   if (!nh_private_.getParam ("grid_length", grid_length_))
-    grid_length_ = 10;
+    grid_length_ = -1;
   if (!nh_private_.getParam ("grid_width", grid_width_))
-    grid_width_ = 10;
+    grid_width_ = -1;
   if (!nh_private_.getParam ("grid_height", grid_height_))
-    grid_height_ = 10;
+    grid_height_ = -1;
+  if (!nh_private_.getParam ("grid_xmin", grid_xmin))
+    grid_xmin = 0;
+  if (!nh_private_.getParam ("grid_ymin", grid_ymin))
+    grid_ymin = 0;
+  if (!nh_private_.getParam ("grid_zmin", grid_zmin))
+    grid_zmin = 0;
 
-  if(mesh_filename_ != "")
+
+  if(grid_height_ <= 0 || grid_length_ <= 0 || grid_width_ <= 0)
   {
+    if(mesh_filename_ == "")
+    { 
+      ROS_ERROR("Must specify grid bounds if no mesh is specified");
+      return;
+    }
+
     ROS_INFO("Loading occupancy map from mesh file: %s", mesh_filename_.c_str());
     MeshUtility::meshToOccupancyGrid(mesh_filename_, cells_per_meter_, &ogrid_);
     ROS_INFO("Loaded succesfully");
@@ -37,7 +52,10 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   else
   {
     ROS_INFO("Loading blank occupancy map with dimensions: %d %d %d", grid_length_, grid_width_, grid_height_);
-    ogrid_ = new OccupancyGrid(grid_length_, grid_width_, grid_height_, Eigen::Vector3d(0,0,0), Eigen::Vector3d(grid_length_, grid_width_, grid_height_/cells_per_meter_) , cells_per_meter_);
+    ogrid_ = new OccupancyGrid(grid_length_, grid_width_, grid_height_, 
+                               Eigen::Vector3d(grid_xmin, grid_ymin, grid_zmin), 
+                               Eigen::Vector3d(grid_length_/cells_per_meter_+grid_xmin, grid_width_/cells_per_meter_+grid_ymin, grid_height_/cells_per_meter_+grid_zmin), 
+                               cells_per_meter_);
   }
 
   std::cout << "Grid Bounds: " << ogrid_->getPmin().transpose() << " and " << ogrid_->getPmax().transpose() << std:: endl;
@@ -55,10 +73,46 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   gdsl_->SetGoal(0, 0, 0);
   ROS_INFO("Graph built");
 
+  if(grid_length_ > 0 && grid_width_ > 0 && grid_height_ > 0)
+  {
+    if(mesh_filename_ != "")
+    {
+      OccupancyGrid* mesh_grid;
+      ROS_INFO("Adding mesh to occupancy map from: %s", mesh_filename_.c_str());
+      MeshUtility::meshToOccupancyGrid(mesh_filename_, cells_per_meter_, &mesh_grid);
+      ROS_INFO("Loaded succesfully");
+
+      for(int x = 0; x < mesh_grid->getLength(); x++)
+      {  
+        for(int y = 0; y < mesh_grid->getWidth(); y++)  
+        {
+          for(int z = 0; z < mesh_grid->getHeight(); z++)  
+          {
+            Eigen::Vector3i gp(x,y,z);
+            if(mesh_grid->isOccupied(gp))
+            {
+              Eigen::Vector3d wp = mesh_grid->gridToPosition(gp);
+              Eigen::Vector3i gpos = ogrid_->positionToGrid(wp);
+              if(ogrid_->isInGrid(gpos))
+              { 
+                ogrid_->setOccupied(wp, true);
+                gdsl_->SetCost(gpos(0), gpos(1), gpos(2), DSL_OCCUPIED); 
+              }
+            }
+          }
+        }
+      }
+      delete mesh_grid;
+
+      mesh_marker_pub_ = nh_.advertise<visualization_msgs::Marker>( "/dsl_grid3d/mesh",  0);
+    }
+  } 
+
   publishAllPaths();
   publishOccupancyGrid();
   if(mesh_filename_ != "")
   {
+    ros::Duration(0.5).sleep();
     publishMesh();
   }
 
@@ -156,7 +210,27 @@ void DslGrid3D::handleAddMesh(const shape_msgs::MeshConstPtr& msg)
 {
   OccupancyGrid* new_ogrid;
   MeshUtility::meshToOccupancyGrid(msg, cells_per_meter_, &new_ogrid);
-  ogrid_->mergeGrid(new_ogrid);
+  //ogrid_->mergeGrid(new_ogrid);
+  for(int x = 0; x < new_ogrid->getLength(); x++)
+  {  
+    for(int y = 0; y < new_ogrid->getWidth(); y++)  
+    {
+      for(int z = 0; z < new_ogrid->getHeight(); z++)  
+      {
+        Eigen::Vector3i gp(x,y,z);
+        if(new_ogrid->isOccupied(gp))
+        {
+          Eigen::Vector3d wp = new_ogrid->gridToPosition(gp);
+          Eigen::Vector3i gpos = ogrid_->positionToGrid(wp);
+          if(ogrid_->isInGrid(gpos))
+          { 
+            ogrid_->setOccupied(wp, true);
+            gdsl_->SetCost(gpos(0), gpos(1), gpos(2), DSL_OCCUPIED); 
+          }
+        }
+      }
+    }
+  }
   delete new_ogrid; 
 }
 

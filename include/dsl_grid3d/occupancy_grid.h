@@ -18,9 +18,12 @@ public:
 
   void mergeGrid(OccupancyGrid* ogrid);
   bool isOccupied(const Eigen::Vector3d& p);
+  bool isOccupied(const Eigen::Vector3i& gp);
+  bool isInGrid(const Eigen::Vector3i& gp); 
   void setOccupied(const Eigen::Vector3d& p, bool set);
   int positionToIndex(const Eigen::Vector3d& p);
   Eigen::Vector3i positionToGrid(const Eigen::Vector3d& p);
+  Eigen::Vector3d gridToPosition(const Eigen::Vector3i& gp);
 
   Eigen::Vector3d getPmin();
   Eigen::Vector3d getPmax();
