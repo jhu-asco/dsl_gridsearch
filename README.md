@@ -7,7 +7,11 @@ We tested DSL Grid3D on Ubuntu 12.04 (Precise) and ROS hydro.
 
 In your ROS package path, clone the repository:
 
+<<<<<<< HEAD
     git clone https://github.com/jhu-asco/dsl_grid3d.git
+=======
+    git clone https://github.com/repo.git
+>>>>>>> 80b8f3e441bcef19d413ede0cf98d0a1ad3522cf
 
 Install the included dsl library
 
@@ -22,11 +26,14 @@ Run catkin_make from the root directory, as usual.
 
 # 2 Quickstart / Minimal Setup
 
+<<<<<<< HEAD
 Unarchive the mesh file:
 
 		cd data 
 		tar -zxvf hackerman2.tar.gz
 
+=======
+>>>>>>> 80b8f3e441bcef19d413ede0cf98d0a1ad3522cf
 Launch the rviz viewer:
 
 		roslaunch dsl_grid3d rviz.launch
