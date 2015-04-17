@@ -2,7 +2,7 @@
 #include <limits>
 #include <algorithm>
 
-#include "dsl_grid3d/mesh_utility.h"
+#include "dsl_gridsearch/mesh_utility.h"
 
 #include "trimesh2/TriMesh.h"
 #include "trimesh2/TriMesh_algo.h"
@@ -12,7 +12,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-namespace dsl_grid3d
+namespace dsl_gridsearch
 {
 
 void MeshUtility::samplePointInTriangle(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, double* xout, double* yout, double* zout)
@@ -229,6 +229,174 @@ bool MeshUtility::meshToOccupancyGrid(const shape_msgs::MeshConstPtr& mesh_msg, 
   }
 
   *ogrid = new OccupancyGrid(occupancy_map, length, width, height, Eigen::Vector3d(xmin, ymin, zmin), Eigen::Vector3d(xmax, ymax, zmax), cells_per_meter);
+
+  return true;
+}
+
+bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_per_meter, OccupancyGrid** ogrid)
+{
+  const double occupied_val = DSL_OCCUPIED;
+  double xmin, xmax, ymin, ymax;
+  int length, width, height;
+  trimesh::TriMesh *map = trimesh::TriMesh::read(map_filename);
+  if(!map)
+  {
+    std::cout << "Could not open mesh: " << map_filename << std::endl;
+    return false;
+  }
+  map->need_faces();
+
+  
+  xmin = ymin = std::numeric_limits<double>::max();
+  xmax = ymax = std::numeric_limits<double>::min();
+  for(unsigned int i = 0; i < map->vertices.size(); i++)
+  {
+    xmin = std::min(double(map->vertices[i][0]),xmin);
+    ymin = std::min(double(map->vertices[i][1]),ymin);
+    xmax = std::max(double(map->vertices[i][0]),xmax);
+    ymax = std::max(double(map->vertices[i][1]),ymax);
+  }
+
+  length = (int)ceil((xmax - xmin)*cells_per_meter);
+  width = (int)ceil((ymax - ymin)*cells_per_meter);
+  height = 1;
+
+  double *occupancy_map = new double[length*width*height];
+  if(!occupancy_map)
+  {
+    std::cout << "Failed to malloc occupancy map" << std::endl;
+    return false;
+  }
+
+  for(int i = 0; i < length*width*height; i++)
+  {
+    occupancy_map[i] = std::numeric_limits<double>::min();
+  }
+
+  for(unsigned int i = 0; i < map->vertices.size(); i++)
+  {
+    int x = (int)floor((map->vertices[i][0] - xmin)*cells_per_meter);
+    int y = (int)floor((map->vertices[i][1] - ymin)*cells_per_meter);
+    double z = map->vertices[i][2];
+    int idx = x + y*length;
+    assert(!(idx >= length*width*height || idx < 0));
+    if(occupancy_map[idx] < z)
+    {
+      occupancy_map[idx] = z;
+    }
+  }
+
+  // Sample points on mesh faces
+  for(unsigned int i = 0; i < map->faces.size(); i++)
+  {
+    trimesh::point v1 = map->vertices[map->faces[i][0]];
+    trimesh::point v2 = map->vertices[map->faces[i][1]];
+    trimesh::point v3 = map->vertices[map->faces[i][2]];
+    Eigen::Vector3d tv1(v2[0]-v1[0], v2[1]-v1[1], v2[2]-v1[2]);
+    Eigen::Vector3d tv2(v3[0]-v1[0], v3[1]-v1[1], v3[2]-v1[2]);
+    double tri_area = (tv1.cross(tv2)).norm()/2.;
+    int num_samples = 2*tri_area*cells_per_meter;
+
+    for(unsigned int j = 0; j < num_samples; j++)
+    {
+      double xs;
+      double ys;
+      double zs;
+      samplePointInTriangle(v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], &xs, &ys, &zs);
+      int x = (int)floor((xs - xmin)*cells_per_meter);
+      int y = (int)floor((ys - ymin)*cells_per_meter);
+      double z = zs;
+      
+      int idx = x + y*length;
+      assert(!(idx >= length*width*height || idx < 0));
+      if(occupancy_map[idx] < z)
+      {
+        occupancy_map[idx] = z;
+      }
+    }
+  }
+
+  *ogrid = new OccupancyGrid(occupancy_map, length, width, 1, Eigen::Vector3d(xmin, ymin, 0), Eigen::Vector3d(xmax, ymax, 0), cells_per_meter);
+
+  return true;
+}
+
+bool MeshUtility::meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, double cells_per_meter, OccupancyGrid** ogrid)
+{
+  const double occupied_val = DSL_OCCUPIED;
+  double xmin, xmax, ymin, ymax;
+  int length, width, height;
+  
+  xmin = ymin = std::numeric_limits<double>::max();
+  xmax = ymax = std::numeric_limits<double>::min();
+  for(unsigned int i = 0; i < mesh_msg->vertices.size(); i++)
+  {
+    xmin = std::min(double(mesh_msg->vertices[i].x),xmin);
+    ymin = std::min(double(mesh_msg->vertices[i].y),ymin);
+    xmax = std::max(double(mesh_msg->vertices[i].x),xmax);
+    ymax = std::max(double(mesh_msg->vertices[i].y),ymax);
+  }
+
+  length = (int)ceil((xmax - xmin)*cells_per_meter);
+  width = (int)ceil((ymax - ymin)*cells_per_meter);
+  height = 1;
+
+  double *occupancy_map = new double[length*width*height];
+  if(!occupancy_map)
+  {
+    std::cout << "Failed to malloc occupancy map" << std::endl;
+    return false;
+  }
+
+  for(int i = 0; i < length*width*height; i++)
+  {
+    occupancy_map[i] = std::numeric_limits<double>::min();
+  }
+
+  for(unsigned int i = 0; i < mesh_msg->vertices.size(); i++)
+  {
+    int x = (int)floor((mesh_msg->vertices[i].x - xmin)*cells_per_meter);
+    int y = (int)floor((mesh_msg->vertices[i].y - ymin)*cells_per_meter);
+    double z = mesh_msg->vertices[i].z;
+    int idx = x + y*length;
+    assert(!(idx >= length*width*height || idx < 0));
+    if(occupancy_map[idx] < z)
+    {
+      occupancy_map[idx] = z;
+    }
+  }
+
+  // Sample points on mesh faces
+  for(unsigned int i = 0; i < mesh_msg->triangles.size(); i++)
+  {
+    geometry_msgs::Point v1 = mesh_msg->vertices[mesh_msg->triangles[i].vertex_indices[0]];
+    geometry_msgs::Point v2 = mesh_msg->vertices[mesh_msg->triangles[i].vertex_indices[1]];
+    geometry_msgs::Point v3 = mesh_msg->vertices[mesh_msg->triangles[i].vertex_indices[2]];
+    Eigen::Vector3d tv1(v2.x-v1.x, v2.y-v1.y, v2.z-v1.z);
+    Eigen::Vector3d tv2(v3.x-v1.x, v3.y-v1.y, v3.z-v1.z);
+    double tri_area = (tv1.cross(tv2)).norm()/2.;
+    int num_samples = 2*tri_area*cells_per_meter;
+
+    for(unsigned int j = 0; j < num_samples; j++)
+    {
+      double xs;
+      double ys;
+      double zs;
+      samplePointInTriangle(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z, &xs, &ys, &zs);
+      int x = (int)floor((xs - xmin)*cells_per_meter);
+      int y = (int)floor((ys - ymin)*cells_per_meter);
+      double z = zs;
+      
+      int idx = x + y*length;
+      assert(!(idx >= length*width*height || idx < 0));
+      if(occupancy_map[idx] < z)
+      {
+        occupancy_map[idx] = z;
+      }
+    }
+  }
+
+  *ogrid = new OccupancyGrid(occupancy_map, length, width, 1, Eigen::Vector3d(xmin, ymin, 0), Eigen::Vector3d(xmax, ymax, 0), cells_per_meter);
 
   return true;
 }

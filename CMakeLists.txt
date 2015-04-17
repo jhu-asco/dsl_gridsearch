@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(dsl_grid3d)
+project(dsl_gridsearch)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -110,18 +110,20 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/extern/trimesh/bin)
 #message(STATUS ${output})
 
 ## Declare a cpp library
-add_library(dsl_grid3d
+add_library(dsl_gridsearch
   src/${PROJECT_NAME}/mesh_utility.cpp
+  src/${PROJECT_NAME}/dsl_grid2d.cpp
   src/${PROJECT_NAME}/dsl_grid3d.cpp
   src/${PROJECT_NAME}/occupancy_grid.cpp
 )
 
-target_link_libraries(dsl_grid3d
+target_link_libraries(dsl_gridsearch
   libdsl.so
 )
 
 ## Declare a cpp executable
 add_executable(dsl_grid3d_node src/${PROJECT_NAME}/dsl_grid3d_node.cpp)
+add_executable(dsl_grid2d_node src/${PROJECT_NAME}/dsl_grid2d_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -129,12 +131,18 @@ add_executable(dsl_grid3d_node src/${PROJECT_NAME}/dsl_grid3d_node.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(dsl_grid3d_node
-  dsl_grid3d
+  dsl_gridsearch
   libtrimesh.a
   libgluit.a
   ${catkin_LIBRARIES}
 )
 
+target_link_libraries(dsl_grid2d_node
+  dsl_gridsearch
+  libtrimesh.a
+  libgluit.a
+  ${catkin_LIBRARIES}
+)
 #############
 ## Install ##
 #############

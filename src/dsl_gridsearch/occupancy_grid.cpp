@@ -1,8 +1,8 @@
-#include "dsl_grid3d/occupancy_grid.h"
+#include "dsl_gridsearch/occupancy_grid.h"
 
 using namespace Eigen;
 
-namespace dsl_grid3d
+namespace dsl_gridsearch
 {
  
 OccupancyGrid::OccupancyGrid(double* occupancy_map, int length, int width, int height, Vector3d pmin, Vector3d pmax, double scale) :
@@ -35,6 +35,22 @@ OccupancyGrid::OccupancyGrid(int length, int width, int height, Vector3d pmin, V
 OccupancyGrid::~OccupancyGrid()
 {
   delete[] occupancy_map_;
+}
+
+double OccupancyGrid::getCost(const Vector3i& gp)
+{
+  assert(gp(0) >= 0 && gp(0) < length_ && 
+         gp(1) >= 0 && gp(1) < width_ && 
+         gp(2) >= 0 && gp(2) < height_);
+  return occupancy_map_[gp(0) + gp(1)*length_ + gp(2)*length_*width_]; 
+}
+
+void OccupancyGrid::setCost(double cost, const Vector3i& gp)
+{
+  assert(gp(0) >= 0 && gp(0) < length_ && 
+         gp(1) >= 0 && gp(1) < width_ && 
+         gp(2) >= 0 && gp(2) < height_);
+  occupancy_map_[gp(0) + gp(1)*length_ + gp(2)*length_*width_] = cost; 
 }
 
 bool OccupancyGrid::isOccupied(const Vector3i& gp)

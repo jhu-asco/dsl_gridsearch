@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>dsl_grid3d</name>
+  <name>dsl_gridsearch</name>
   <version>0.0.1</version>
-  <description>A package for D*-lite planning on a 3D occupancy grid.</description>
+  <description>A package for D*-lite planning on a 3D occupancy grid or 2D traversability map.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -13,7 +13,7 @@
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>MPL</license>
 
 
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->

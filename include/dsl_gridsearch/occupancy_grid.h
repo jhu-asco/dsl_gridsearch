@@ -7,7 +7,7 @@
 #define DSL_OCCUPIED 1e10
 
 
-namespace dsl_grid3d
+namespace dsl_gridsearch
 {
 
 class OccupancyGrid
@@ -18,6 +18,8 @@ public:
   ~OccupancyGrid();
 
   void mergeGrid(OccupancyGrid* ogrid);
+  double getCost(const Eigen::Vector3i& gp);
+  void setCost(double cost, const Eigen::Vector3i& gp);
   bool isOccupied(const Eigen::Vector3d& p);
   bool isOccupied(const Eigen::Vector3i& gp);
   bool isInGrid(const Eigen::Vector3i& gp); 

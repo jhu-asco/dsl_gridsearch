@@ -1,12 +1,12 @@
 #ifndef _MESH_UTILITY_H_
 #define _MESH_UTILITY_H_
 
-#include "dsl_grid3d/occupancy_grid.h"
+#include "dsl_gridsearch/occupancy_grid.h"
 
 #include <shape_msgs/Mesh.h>
 #include <string>
 
-namespace dsl_grid3d
+namespace dsl_gridsearch
 {
 
 class MeshUtility
@@ -15,6 +15,8 @@ public:
   
 static bool meshToOccupancyGrid(const std::string& filename, double cells_per_meter, OccupancyGrid** ogrid);
 static bool meshToOccupancyGrid(const shape_msgs::MeshConstPtr& mesh_msg, double cells_per_meter, OccupancyGrid** ogrid);
+static bool meshToHeightMap(const std::string& filename, double cells_per_meter, OccupancyGrid** ogrid);
+static bool meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, double cells_per_meter, OccupancyGrid** ogrid);
 
 
 private:

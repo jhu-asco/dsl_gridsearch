@@ -1,4 +1,4 @@
-#include "dsl_grid3d/dsl_grid3d.h"
+#include "dsl_gridsearch/dsl_grid3d.h"
 
 
 int main (int argc, char **argv)
@@ -7,7 +7,7 @@ int main (int argc, char **argv)
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
 
-  dsl_grid3d::DslGrid3D dslg3d(nh, nh_private);
+  dsl_gridsearch::DslGrid3D dslg3d(nh, nh_private);
 
   ros::spin();
 

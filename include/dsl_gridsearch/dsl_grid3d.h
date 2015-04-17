@@ -7,10 +7,10 @@
 #include <nav_msgs/Path.h>
 
 #include "dsl/gridsearch3d.h"
-#include "dsl_grid3d/occupancy_grid.h"
+#include "dsl_gridsearch/occupancy_grid.h"
 
 
-namespace dsl_grid3d
+namespace dsl_gridsearch
 {
 
 class DslGrid3D
