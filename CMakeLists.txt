@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(dsl_gridsearch)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -14,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen REQUIRED)
+find_package(DSL REQUIRED)
 find_package(OpenMP REQUIRED)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -101,7 +103,7 @@ include_directories(
   include
   ${CMAKE_CURRENT_SOURCE_DIR}/extern/trimesh/include
   ${catkin_INCLUDE_DIRS}
-  ${Eigen_INCLUDE_DIRS}
+  ${EIGEN_INCLUDE_DIRS}
 )
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/extern/gluit/bin)
@@ -118,7 +120,8 @@ add_library(dsl_gridsearch
 )
 
 target_link_libraries(dsl_gridsearch
-  libdsl.so
+  #libdsl.so
+  ${DSL_LIBRARY}
 )
 
 ## Declare a cpp executable
