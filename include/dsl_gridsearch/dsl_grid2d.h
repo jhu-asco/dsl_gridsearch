@@ -6,7 +6,7 @@
 #include <shape_msgs/Mesh.h>
 #include <nav_msgs/Path.h>
 
-#include "dsl/travsearch.h"
+#include "dsl/gridsearch.h"
 #include "dsl_gridsearch/occupancy_grid.h"
 
 
@@ -32,7 +32,7 @@ private:
   nav_msgs::Path dslPathToRosMsg(const dsl::GridPath& dsl_path);
   bool isPosInBounds(const Eigen::Vector3d& pos);
 
-  dsl::TravSearch* gdsl_;
+  dsl::GridSearch* gdsl_;
   dsl::GridPath path_, optpath_;
   OccupancyGrid* ogrid_;
 
