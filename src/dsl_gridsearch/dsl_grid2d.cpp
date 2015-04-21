@@ -1,6 +1,8 @@
 #include "dsl_gridsearch/dsl_grid2d.h"
 #include "dsl_gridsearch/mesh_utility.h"
 
+#include <limits>
+
 #include <visualization_msgs/Marker.h>
 
 namespace dsl_gridsearch
@@ -37,11 +39,11 @@ DslGrid2D::DslGrid2D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
       return;
     }
 
-    ROS_INFO("Loading occupancy map from mesh file: %s", mesh_filename_.c_str());
-    MeshUtility::meshToOccupancyGrid(mesh_filename_, cells_per_meter_, &ogrid_);
+    ROS_INFO("Loading traversability map from mesh file: %s", mesh_filename_.c_str());
+    MeshUtility::meshToHeightMap(mesh_filename_, cells_per_meter_, &ogrid_);
     ROS_INFO("Loaded succesfully");
 
-    mesh_marker_pub_ = nh_.advertise<visualization_msgs::Marker>( "/dsl_grid3d/mesh",  0);
+    mesh_marker_pub_ = nh_.advertise<visualization_msgs::Marker>( "/dsl_grid2d/mesh",  0);
   }
   else
   {
@@ -49,7 +51,8 @@ DslGrid2D::DslGrid2D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
     ogrid_ = new OccupancyGrid(grid_length_, grid_width_, 1, 
                                Eigen::Vector3d(grid_xmin, grid_ymin, 0), 
                                Eigen::Vector3d(grid_length_/cells_per_meter_+grid_xmin, grid_width_/cells_per_meter_+grid_ymin, 0), 
-                               cells_per_meter_);
+                               cells_per_meter_,
+                               -100);
   }
 
   std::cout << "Grid Bounds: " << ogrid_->getPmin().transpose() << " and " << ogrid_->getPmax().transpose() << std:: endl;
@@ -58,7 +61,6 @@ DslGrid2D::DslGrid2D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   path_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid2d/path",  0);
   optpath_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid2d/optpath",  0);
 
-  //Perform dsl gridsearch3D
   ROS_INFO("Building search graph...");
   gdsl_ = new dsl::TravSearch(ogrid_->getLength(), ogrid_->getWidth(), ogrid_->getOccupancyMap());
   gdsl_->SetStart(0, 0);
@@ -94,11 +96,11 @@ DslGrid2D::DslGrid2D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
     }
   } 
 
+  ros::Duration(0.5).sleep();
   publishAllPaths();
   publishOccupancyGrid();
   if(mesh_filename_ != "")
   {
-    ros::Duration(0.5).sleep();
     publishMesh();
   }
 
@@ -107,21 +109,21 @@ DslGrid2D::DslGrid2D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   set_start_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid2d/set_start", 10, &DslGrid2D::handleSetStart, this, ros::TransportHints().tcpNoDelay());
   set_goal_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid2d/set_goal", 10, &DslGrid2D::handleSetGoal, this, ros::TransportHints().tcpNoDelay());
   set_cost_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid2d/set_cost", 10, &DslGrid2D::handleSetCost, this, ros::TransportHints().tcpNoDelay());
-  set_mesh_cost_sub_ = nh_.subscribe<shape_msgs::Mesh>("/dsl_grid3d/set_mesh_cost", 10, &DslGrid2D::handleSetMeshCost, this, ros::TransportHints().tcpNoDelay());
+  set_mesh_cost_sub_ = nh_.subscribe<shape_msgs::Mesh>("/dsl_grid2d/set_mesh_cost", 10, &DslGrid2D::handleSetMeshCost, this, ros::TransportHints().tcpNoDelay());
 }
 
 void DslGrid2D::handleSetStart(const geometry_msgs::PointConstPtr& msg)
 {
-  Eigen::Vector3d wpos(msg->x, msg->y, msg->z);
+  Eigen::Vector3d wpos(msg->x, msg->y, 0);
 
   if(!isPosInBounds(wpos))
   {
-    ROS_WARN("handleSetStart: Position %f %f %f out of bounds!", wpos(0), wpos(1), wpos(2));
+    ROS_WARN("handleSetStart: Position %f %f out of bounds!", wpos(0), wpos(1));
     return;
   }
  
-  ROS_INFO("Set start pos: %f %f %f", wpos(0), wpos(1), wpos(2));
-  Eigen::Vector3i pos = ogrid_->positionToGrid(Eigen::Vector3d(msg->x, msg->y, msg->z));
+  ROS_INFO("Set start pos: %f %f", wpos(0), wpos(1));
+  Eigen::Vector3i pos = ogrid_->positionToGrid(Eigen::Vector3d(msg->x, msg->y, 0));
   gdsl_->SetStart(pos(0), pos(1));
 
   planAllPaths();
@@ -129,15 +131,15 @@ void DslGrid2D::handleSetStart(const geometry_msgs::PointConstPtr& msg)
 }
 void DslGrid2D::handleSetGoal(const geometry_msgs::PointConstPtr& msg)
 {
-  Eigen::Vector3d wpos(msg->x, msg->y, msg->z);
+  Eigen::Vector3d wpos(msg->x, msg->y, 0);
 
   if(!isPosInBounds(wpos))
   {
-    ROS_WARN("handleSetGoal: Position %f %f %f out of bounds!", wpos(0), wpos(1), wpos(2));
+    ROS_WARN("handleSetGoal: Position %f %f out of bounds!", wpos(0), wpos(1));
     return;
   } 
 
-  ROS_INFO("Set goal pos: %f %f %f", wpos(0), wpos(1), wpos(2));
+  ROS_INFO("Set goal pos: %f %f", wpos(0), wpos(1));
   Eigen::Vector3i pos = ogrid_->positionToGrid(Eigen::Vector3d(msg->x, msg->y, msg->z));
   gdsl_->SetGoal(pos(0), pos(1));
 
@@ -150,7 +152,7 @@ void DslGrid2D::handleSetCost(const geometry_msgs::PointConstPtr& msg)
 
   if(!isPosInBounds(wpos))
   {
-    ROS_WARN("handleSetOccupied: Position %f %f %f out of bounds!", wpos(0), wpos(1), wpos(2));
+    ROS_WARN("handleSetOccupied: Position %f %f out of bounds!", wpos(0), wpos(1));
     return;
   } 
 
@@ -217,13 +219,12 @@ nav_msgs::Path DslGrid2D::dslPathToRosMsg(const dsl::GridPath &dsl_path)
   msg.poses.resize(dsl_path.count);
   double xmin = ogrid_->getPmin()(0);
   double ymin = ogrid_->getPmin()(1);
-  double zmin = ogrid_->getPmin()(2);
   double offset = 1.0/(2*cells_per_meter_);
   for(int i = 0; i < dsl_path.count; i++)
   {
-    msg.poses[i].pose.position.x = dsl_path.pos[3*i]/cells_per_meter_ + offset + xmin;//0.5;
-    msg.poses[i].pose.position.y = dsl_path.pos[3*i+1]/cells_per_meter_ + offset + ymin;//0.5;
-    msg.poses[i].pose.position.z = dsl_path.pos[3*i+2]/cells_per_meter_ + offset + zmin;//0.5;
+    msg.poses[i].pose.position.x = dsl_path.pos[2*i]/cells_per_meter_ + offset + xmin;//0.5;
+    msg.poses[i].pose.position.y = dsl_path.pos[2*i+1]/cells_per_meter_ + offset + ymin;//0.5;
+    msg.poses[i].pose.position.z = 0;//0.5;
   }
   return msg; 
 }
@@ -233,7 +234,7 @@ void DslGrid2D::publishMesh()
   visualization_msgs::Marker marker;
   marker.header.frame_id = "/world";
   marker.header.stamp = ros::Time();
-  marker.ns = "dsl_grid3d";
+  marker.ns = "dsl_grid2d";
   marker.id = 0;
   marker.type = visualization_msgs::Marker::MESH_RESOURCE;
   marker.action = visualization_msgs::Marker::ADD;
@@ -298,7 +299,7 @@ void DslGrid2D::publishOccupancyGrid()
 
   occmap_viz.header.frame_id = "/world";
   occmap_viz.header.stamp = ros::Time();
-  occmap_viz.ns = "dsl_grid3d";
+  occmap_viz.ns = "dsl_grid2d";
   occmap_viz.id = 1;
   occmap_viz.type = visualization_msgs::Marker::CUBE_LIST;
   occmap_viz.action = visualization_msgs::Marker::ADD;

@@ -15,8 +15,8 @@ public:
   
 static bool meshToOccupancyGrid(const std::string& filename, double cells_per_meter, OccupancyGrid** ogrid);
 static bool meshToOccupancyGrid(const shape_msgs::MeshConstPtr& mesh_msg, double cells_per_meter, OccupancyGrid** ogrid);
-static bool meshToHeightMap(const std::string& filename, double cells_per_meter, OccupancyGrid** ogrid);
-static bool meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, double cells_per_meter, OccupancyGrid** ogrid);
+static bool meshToHeightMap(const std::string& filename, double cells_per_meter, OccupancyGrid** ogrid, double default_val = -100);
+static bool meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, double cells_per_meter, OccupancyGrid** ogrid, double default_val = -100);
 
 
 private:

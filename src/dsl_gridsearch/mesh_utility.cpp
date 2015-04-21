@@ -76,7 +76,7 @@ bool MeshUtility::meshToOccupancyGrid(const std::string& map_filename, double ce
 
   
   xmin = ymin = zmin = std::numeric_limits<double>::max();
-  xmax = ymax = zmax = std::numeric_limits<double>::min();
+  xmax = ymax = zmax = -std::numeric_limits<double>::max();
   for(unsigned int i = 0; i < map->vertices.size(); i++)
   {
     xmin = std::min(double(map->vertices[i][0]),xmin);
@@ -158,7 +158,7 @@ bool MeshUtility::meshToOccupancyGrid(const shape_msgs::MeshConstPtr& mesh_msg, 
   int length, width, height;
   
   xmin = ymin = zmin = std::numeric_limits<double>::max();
-  xmax = ymax = zmax = std::numeric_limits<double>::min();
+  xmax = ymax = zmax = -std::numeric_limits<double>::max();
   for(unsigned int i = 0; i < mesh_msg->vertices.size(); i++)
   {
     xmin = std::min(double(mesh_msg->vertices[i].x),xmin);
@@ -233,7 +233,7 @@ bool MeshUtility::meshToOccupancyGrid(const shape_msgs::MeshConstPtr& mesh_msg, 
   return true;
 }
 
-bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_per_meter, OccupancyGrid** ogrid)
+bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_per_meter, OccupancyGrid** ogrid, double default_val)
 {
   const double occupied_val = DSL_OCCUPIED;
   double xmin, xmax, ymin, ymax;
@@ -248,7 +248,7 @@ bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_
 
   
   xmin = ymin = std::numeric_limits<double>::max();
-  xmax = ymax = std::numeric_limits<double>::min();
+  xmax = ymax = -std::numeric_limits<double>::max();
   for(unsigned int i = 0; i < map->vertices.size(); i++)
   {
     xmin = std::min(double(map->vertices[i][0]),xmin);
@@ -270,7 +270,7 @@ bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_
 
   for(int i = 0; i < length*width*height; i++)
   {
-    occupancy_map[i] = std::numeric_limits<double>::min();
+    occupancy_map[i] = default_val;
   }
 
   for(unsigned int i = 0; i < map->vertices.size(); i++)
@@ -321,14 +321,14 @@ bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_
   return true;
 }
 
-bool MeshUtility::meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, double cells_per_meter, OccupancyGrid** ogrid)
+bool MeshUtility::meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, double cells_per_meter, OccupancyGrid** ogrid, double default_val)
 {
   const double occupied_val = DSL_OCCUPIED;
   double xmin, xmax, ymin, ymax;
   int length, width, height;
   
   xmin = ymin = std::numeric_limits<double>::max();
-  xmax = ymax = std::numeric_limits<double>::min();
+  xmax = ymax = -std::numeric_limits<double>::max();
   for(unsigned int i = 0; i < mesh_msg->vertices.size(); i++)
   {
     xmin = std::min(double(mesh_msg->vertices[i].x),xmin);
@@ -350,7 +350,7 @@ bool MeshUtility::meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, doub
 
   for(int i = 0; i < length*width*height; i++)
   {
-    occupancy_map[i] = std::numeric_limits<double>::min();
+    occupancy_map[i] = default_val;
   }
 
   for(unsigned int i = 0; i < mesh_msg->vertices.size(); i++)

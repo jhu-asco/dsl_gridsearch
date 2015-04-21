@@ -17,7 +17,7 @@ OccupancyGrid::OccupancyGrid(double* occupancy_map, int length, int width, int h
 
 }
 
-OccupancyGrid::OccupancyGrid(int length, int width, int height, Vector3d pmin, Vector3d pmax, double scale) :
+OccupancyGrid::OccupancyGrid(int length, int width, int height, Vector3d pmin, Vector3d pmax, double scale, double default_val) :
   length_(length),
   width_(width),
   height_(height),
@@ -28,7 +28,7 @@ OccupancyGrid::OccupancyGrid(int length, int width, int height, Vector3d pmin, V
   occupancy_map_ = new double[length*width*height];
   for(int i = 0; i < length*width*height; i++)
   {
-    occupancy_map_[i] = 0;
+    occupancy_map_[i] = default_val;
   } 
 }
 
