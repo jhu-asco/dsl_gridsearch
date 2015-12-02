@@ -1,6 +1,5 @@
 #include "dsl_gridsearch/dsl_grid2d.h"
 #include "dsl_gridsearch/mesh_utility.h"
-#include "dsl/travedgecost.h"
 
 #include <limits>
 
@@ -63,7 +62,7 @@ DslGrid2D::DslGrid2D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   optpath_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid2d/optpath",  0);
 
   ROS_INFO("Building search graph...");
-  gdsl_ = new dsl::GridSearch(ogrid_->getLength(), ogrid_->getWidth(), new dsl::TravEdgeCost(), ogrid_->getOccupancyMap());
+  gdsl_ = new dsl::GridSearch(ogrid_->getLength(), ogrid_->getWidth(), gcost, ogrid_->getOccupancyMap());
   gdsl_->SetStart(0, 0);
   gdsl_->SetGoal(0, 0);
   ROS_INFO("Graph built");

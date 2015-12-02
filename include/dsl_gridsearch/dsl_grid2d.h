@@ -7,6 +7,7 @@
 #include <nav_msgs/Path.h>
 
 #include "dsl/gridsearch.h"
+#include "dsl/gridtravcost.h"
 #include "dsl_gridsearch/occupancy_grid.h"
 
 
@@ -54,6 +55,7 @@ private:
   bool use_textured_mesh_;
   int grid_length_;
   int grid_width_;
+  dsl::GridTravCost gcost;
 };
 
 
