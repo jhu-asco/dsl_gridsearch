@@ -207,6 +207,7 @@ void DslGrid2D::planAllPaths()
   double maxz = 0;
   for(int i = 0; i < path_.cells.size(); i++)
   {
+    std::cout << path_.cells[i].c.transpose() << std::endl;
     if(gdsl_->GetCost(path_.cells[i].c) > maxz)
       maxz = gdsl_->GetCost(path_.cells[i].c); 
   }

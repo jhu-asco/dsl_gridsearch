@@ -259,8 +259,8 @@ void DslGrid3D::planAllPaths()
 {
   gdsl_->Plan(path_);
   gdsl_->OptPath(path_, optpath_, 1e-3, 1./(10*cells_per_meter_));
-  //gdsl_->SplinePath(path_, splinepath_, /*splinecells_,*/ spline_step_, 100);
-  //gdsl_->SplinePath(optpath_, splineoptpath_, splineoptcells_, spline_step_);
+  gdsl_->SplinePath(path_, splinepath_, /*splinecells_,*/ spline_step_);
+  gdsl_->SplinePath(optpath_, splineoptpath_, /*splineoptcells_,*/ spline_step_);
 }
 
 void DslGrid3D::publishAllPaths()
@@ -268,7 +268,7 @@ void DslGrid3D::publishAllPaths()
   path_pub_.publish(dslPathToRosMsg(path_)); 
   optpath_pub_.publish(dslPathToRosMsg(optpath_)); 
   splinepath_pub_.publish(dslPathToRosMsg(splinepath_)); 
-  //splineoptpath_pub_.publish(dslPathToRosMsg(splineoptpath_)); 
+  splineoptpath_pub_.publish(dslPathToRosMsg(splineoptpath_)); 
 }
 
 nav_msgs::Path DslGrid3D::dslPathToRosMsg(const dsl::GridPath<3> &dsl_path)
