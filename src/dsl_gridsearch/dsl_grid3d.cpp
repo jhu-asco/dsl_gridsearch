@@ -17,8 +17,8 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
     mesh_filename_ = "";
   if (!nh_private_.getParam ("cells_per_meter", cells_per_meter_))
     cells_per_meter_ = 1.;
-  if (!nh_private_.getParam ("spline_path_maxvelocity", spline_path_maxvelocity_))
-    spline_path_maxvelocity_ = 1.;
+  if (!nh_private_.getParam ("spline_step_", spline_step_))
+    spline_step_ = .1;
   if (!nh_private_.getParam ("use_textured_mesh", use_textured_mesh_))
     use_textured_mesh_ = false;
   if (!nh_private_.getParam ("grid_length", grid_length_))
@@ -51,14 +51,18 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   }
   else
   {
-    ROS_INFO("Loading blank occupancy map with dimensions: %d %d %d", grid_length_, grid_width_, grid_height_);
+    ROS_INFO("Loading blank occupancy map with dimensions: %d %d %d", grid_length_, grid_width_, 
+      grid_height_);
     ogrid_ = new OccupancyGrid(grid_length_, grid_width_, grid_height_, 
                                Eigen::Vector3d(grid_xmin, grid_ymin, grid_zmin), 
-                               Eigen::Vector3d(grid_length_/cells_per_meter_+grid_xmin, grid_width_/cells_per_meter_+grid_ymin, grid_height_/cells_per_meter_+grid_zmin), 
+                               Eigen::Vector3d(grid_length_/cells_per_meter_+grid_xmin, 
+                                 grid_width_/cells_per_meter_+grid_ymin, 
+                                 grid_height_/cells_per_meter_+grid_zmin), 
                                cells_per_meter_);
   }
 
-  std::cout << "Grid Bounds: " << ogrid_->getPmin().transpose() << " and " << ogrid_->getPmax().transpose() << std:: endl;
+  std::cout << "Grid Bounds: " << ogrid_->getPmin().transpose() << " and " 
+    << ogrid_->getPmax().transpose() << std:: endl;
 
   occ_map_viz_pub_ = nh_.advertise<visualization_msgs::Marker>( "/dsl_grid3d/occupancy_map",  0);
   path_pub_ = nh_.advertise<nav_msgs::Path>( "/dsl_grid3d/path",  0);
@@ -68,9 +72,13 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
 
   //Perform dsl gridsearch3D
   ROS_INFO("Building search graph...");
-  gdsl_ = new dsl::GridSearch3D(ogrid_->getLength(), ogrid_->getWidth(), ogrid_->getHeight(), ogrid_->getOccupancyMap());
-  gdsl_->SetStart(0, 0, 0);
-  gdsl_->SetGoal(0, 0, 0);
+  grid_ = new dsl::Grid3d(ogrid_->getLength(), ogrid_->getWidth(), ogrid_->getHeight(), 
+    ogrid_->getOccupancyMap(), 
+    1/cells_per_meter_, 1/cells_per_meter_, 1/cells_per_meter_, 1, 1000);
+  connectivity_ = new dsl::Grid3dConnectivity(*grid_);
+  gdsl_ = new dsl::GridSearch<3>(*grid_, *connectivity_, cost_, true);
+  gdsl_->SetStart(Eigen::Vector3d(0, 0, 0));
+  gdsl_->SetGoal(Eigen::Vector3d(0, 0, 0));
   ROS_INFO("Graph built");
 
   if(grid_length_ > 0 && grid_width_ > 0 && grid_height_ > 0)
@@ -92,11 +100,9 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
             if(mesh_grid->isOccupied(gp))
             {
               Eigen::Vector3d wp = mesh_grid->gridToPosition(gp);
-              Eigen::Vector3i gpos = ogrid_->positionToGrid(wp);
-              if(ogrid_->isInGrid(gpos))
+              if(gdsl_->SetCost(ogrid_->positionToDslPosition(wp), DSL_OCCUPIED)); 
               { 
                 ogrid_->setOccupied(wp, true);
-                gdsl_->SetCost(gpos(0), gpos(1), gpos(2), DSL_OCCUPIED); 
               }
             }
           }
@@ -118,11 +124,16 @@ DslGrid3D::DslGrid3D(ros::NodeHandle nh, ros::NodeHandle nh_private) :
 
   ROS_INFO("Published occupancy grid");
 
-  set_start_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_start", 10, &DslGrid3D::handleSetStart, this, ros::TransportHints().tcpNoDelay());
-  set_goal_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_goal", 10, &DslGrid3D::handleSetGoal, this, ros::TransportHints().tcpNoDelay());
-  set_occupied_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_occupied", 10, &DslGrid3D::handleSetOccupied, this, ros::TransportHints().tcpNoDelay());
-  set_unoccupied_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_unoccupied", 10, &DslGrid3D::handleSetUnoccupied, this, ros::TransportHints().tcpNoDelay());
-  set_mesh_occupied_sub_ = nh_.subscribe<shape_msgs::Mesh>("/dsl_grid3d/set_mesh_occupied", 10, &DslGrid3D::handleAddMesh, this, ros::TransportHints().tcpNoDelay());
+  set_start_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_start", 10, 
+    &DslGrid3D::handleSetStart, this, ros::TransportHints().tcpNoDelay());
+  set_goal_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_goal", 10,
+    &DslGrid3D::handleSetGoal, this, ros::TransportHints().tcpNoDelay());
+  set_occupied_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_occupied", 10, 
+    &DslGrid3D::handleSetOccupied, this, ros::TransportHints().tcpNoDelay());
+  set_unoccupied_sub_ = nh_.subscribe<geometry_msgs::Point>("/dsl_grid3d/set_unoccupied", 10, 
+    &DslGrid3D::handleSetUnoccupied, this, ros::TransportHints().tcpNoDelay());
+  set_mesh_occupied_sub_ = nh_.subscribe<shape_msgs::Mesh>("/dsl_grid3d/set_mesh_occupied", 10, 
+    &DslGrid3D::handleAddMesh, this, ros::TransportHints().tcpNoDelay());
 
   //timer = nh_private_.createTimer(ros::Duration(0.1), &DslGrid3D::spin, this);
   //ROS_INFO("Spinner started");
@@ -143,8 +154,8 @@ void DslGrid3D::handleSetStart(const geometry_msgs::PointConstPtr& msg)
   }
  
   ROS_INFO("Set start pos: %f %f %f", wpos(0), wpos(1), wpos(2));
-  Eigen::Vector3i pos = ogrid_->positionToGrid(Eigen::Vector3d(msg->x, msg->y, msg->z));
-  gdsl_->SetStart(pos(0), pos(1), pos(2));
+  Eigen::Vector3d pos = ogrid_->positionToDslPosition(wpos);
+  gdsl_->SetStart(pos);
 
   planAllPaths();
   publishAllPaths();
@@ -160,8 +171,9 @@ void DslGrid3D::handleSetGoal(const geometry_msgs::PointConstPtr& msg)
   } 
 
   ROS_INFO("Set goal pos: %f %f %f", wpos(0), wpos(1), wpos(2));
-  Eigen::Vector3i pos = ogrid_->positionToGrid(Eigen::Vector3d(msg->x, msg->y, msg->z));
-  gdsl_->SetGoal(pos(0), pos(1), pos(2));
+  Eigen::Vector3d pos = ogrid_->positionToDslPosition(wpos);
+  ROS_INFO("Set dsl goal pos: %f %f %f", pos(0), pos(1), pos(2));
+  gdsl_->SetGoal(pos);
 
   planAllPaths();
   publishAllPaths();
@@ -178,7 +190,7 @@ void DslGrid3D::handleSetOccupied(const geometry_msgs::PointConstPtr& msg)
 
   Eigen::Vector3i gpos = ogrid_->positionToGrid(wpos);
   ogrid_->setOccupied(wpos, true);
-  gdsl_->SetCost(gpos(0), gpos(1), gpos(2), DSL_OCCUPIED);
+  gdsl_->SetCost(ogrid_->positionToDslPosition(wpos), DSL_OCCUPIED);
 
   std::cout << "Set Occupied pos: " << wpos.transpose() << std::endl;
 
@@ -198,7 +210,7 @@ void DslGrid3D::handleSetUnoccupied(const geometry_msgs::PointConstPtr& msg)
 
   Eigen::Vector3i gpos = ogrid_->positionToGrid(wpos);
   ogrid_->setOccupied(wpos, false);
-  gdsl_->SetCost(gpos(0), gpos(1), gpos(2), 0);
+  gdsl_->SetCost(ogrid_->positionToDslPosition(wpos), 0);
 
   std::cout << "Set Unoccupied pos: " << wpos.transpose() << std::endl;
 
@@ -226,7 +238,7 @@ void DslGrid3D::handleAddMesh(const shape_msgs::MeshConstPtr& msg)
           if(ogrid_->isInGrid(gpos))
           { 
             ogrid_->setOccupied(wp, true);
-            gdsl_->SetCost(gpos(0), gpos(1), gpos(2), DSL_OCCUPIED); 
+            gdsl_->SetCost(ogrid_->gridToDslPosition(gpos), DSL_OCCUPIED); 
           }
         }
       }
@@ -239,15 +251,16 @@ bool DslGrid3D::isPosInBounds(const Eigen::Vector3d& pos)
 {
   Eigen::Vector3d pmin = ogrid_->getPmin();
   Eigen::Vector3d pmax = ogrid_->getPmax();
-  return (pos(0) >= pmin(0) && pos(1) >= pmin(1) && pos(2) >= pmin(2) && pos(0) <= pmax(0) && pos(1) <= pmax(1) && pos(2) <= pmax(2));
+  return (pos(0) >= pmin(0) && pos(1) >= pmin(1) && pos(2) >= pmin(2) && pos(0) <= pmax(0) 
+    && pos(1) <= pmax(1) && pos(2) <= pmax(2));
 }
 
 void DslGrid3D::planAllPaths()
 {
   gdsl_->Plan(path_);
-  gdsl_->OptPath(path_, optpath_);
-  gdsl_->SmoothPathSpline(path_, splinepath_, spline_path_maxvelocity_*cells_per_meter_/10., .4);
-  gdsl_->SmoothPathSpline(optpath_, splineoptpath_, spline_path_maxvelocity_*cells_per_meter_/10., .4);
+  gdsl_->OptPath(path_, optpath_, 1e-3, 1./(10*cells_per_meter_));
+  //gdsl_->SplinePath(path_, splinepath_, /*splinecells_,*/ spline_step_, 100);
+  //gdsl_->SplinePath(optpath_, splineoptpath_, splineoptcells_, spline_step_);
 }
 
 void DslGrid3D::publishAllPaths()
@@ -255,24 +268,32 @@ void DslGrid3D::publishAllPaths()
   path_pub_.publish(dslPathToRosMsg(path_)); 
   optpath_pub_.publish(dslPathToRosMsg(optpath_)); 
   splinepath_pub_.publish(dslPathToRosMsg(splinepath_)); 
-  splineoptpath_pub_.publish(dslPathToRosMsg(splineoptpath_)); 
+  //splineoptpath_pub_.publish(dslPathToRosMsg(splineoptpath_)); 
 }
 
-nav_msgs::Path DslGrid3D::dslPathToRosMsg(const dsl::GridPath3D &dsl_path)
+nav_msgs::Path DslGrid3D::dslPathToRosMsg(const dsl::GridPath<3> &dsl_path)
+{
+  std::vector<Eigen::Vector3d>  path;
+  for(int i = 0; i < dsl_path.cells.size(); i++)
+  {
+    path.push_back(dsl_path.cells[i].c);
+  }
+  return dslPathToRosMsg(path);
+}
+nav_msgs::Path DslGrid3D::dslPathToRosMsg(const std::vector<Eigen::Vector3d> &dsl_path)
 {
   nav_msgs::Path msg;  
   
   msg.header.frame_id = "/world";
-  msg.poses.resize(dsl_path.count);
+  msg.poses.resize(dsl_path.size());
   double xmin = ogrid_->getPmin()(0);
   double ymin = ogrid_->getPmin()(1);
   double zmin = ogrid_->getPmin()(2);
-  double offset = 1.0/(2*cells_per_meter_);
-  for(int i = 0; i < dsl_path.count; i++)
+  for(int i = 0; i < dsl_path.size(); i++)
   {
-    msg.poses[i].pose.position.x = dsl_path.pos[3*i]/cells_per_meter_ + offset + xmin;//0.5;
-    msg.poses[i].pose.position.y = dsl_path.pos[3*i+1]/cells_per_meter_ + offset + ymin;//0.5;
-    msg.poses[i].pose.position.z = dsl_path.pos[3*i+2]/cells_per_meter_ + offset + zmin;//0.5;
+    msg.poses[i].pose.position.x = dsl_path[i][0] + xmin;//0.5;
+    msg.poses[i].pose.position.y = dsl_path[i][1] + ymin;//0.5;
+    msg.poses[i].pose.position.z = dsl_path[i][2] + zmin;//0.5;
   }
   return msg; 
 }

@@ -236,7 +236,7 @@ bool MeshUtility::meshToOccupancyGrid(const shape_msgs::MeshConstPtr& mesh_msg, 
 bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_per_meter, OccupancyGrid** ogrid, double default_val)
 {
   const double occupied_val = DSL_OCCUPIED;
-  double xmin, xmax, ymin, ymax;
+  double xmin, xmax, ymin, ymax, zmin;
   int length, width, height;
   trimesh::TriMesh *map = trimesh::TriMesh::read(map_filename);
   if(!map)
@@ -247,12 +247,13 @@ bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_
   map->need_faces();
 
   
-  xmin = ymin = std::numeric_limits<double>::max();
+  zmin = xmin = ymin = std::numeric_limits<double>::max();
   xmax = ymax = -std::numeric_limits<double>::max();
   for(unsigned int i = 0; i < map->vertices.size(); i++)
   {
     xmin = std::min(double(map->vertices[i][0]),xmin);
     ymin = std::min(double(map->vertices[i][1]),ymin);
+    zmin = std::min(double(map->vertices[i][2]),zmin);
     xmax = std::max(double(map->vertices[i][0]),xmax);
     ymax = std::max(double(map->vertices[i][1]),ymax);
   }
@@ -277,10 +278,10 @@ bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_
   {
     int x = (int)floor((map->vertices[i][0] - xmin)*cells_per_meter);
     int y = (int)floor((map->vertices[i][1] - ymin)*cells_per_meter);
-    double z = map->vertices[i][2];
+    double z = map->vertices[i][2]-zmin;
     int idx = x + y*length;
     assert(!(idx >= length*width*height || idx < 0));
-    if(occupancy_map[idx] < z)
+    if(occupancy_map[idx] < z || occupancy_map[idx] == default_val)
     {
       occupancy_map[idx] = z;
     }
@@ -305,11 +306,11 @@ bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_
       samplePointInTriangle(v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], &xs, &ys, &zs);
       int x = (int)floor((xs - xmin)*cells_per_meter);
       int y = (int)floor((ys - ymin)*cells_per_meter);
-      double z = zs;
+      double z = zs-zmin;
       
       int idx = x + y*length;
       assert(!(idx >= length*width*height || idx < 0));
-      if(occupancy_map[idx] < z)
+      if(occupancy_map[idx] < z || occupancy_map[idx] == default_val)
       {
         occupancy_map[idx] = z;
       }
@@ -324,15 +325,16 @@ bool MeshUtility::meshToHeightMap(const std::string& map_filename, double cells_
 bool MeshUtility::meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, double cells_per_meter, OccupancyGrid** ogrid, double default_val)
 {
   const double occupied_val = DSL_OCCUPIED;
-  double xmin, xmax, ymin, ymax;
+  double xmin, xmax, ymin, ymax, zmin;
   int length, width, height;
   
-  xmin = ymin = std::numeric_limits<double>::max();
+  xmin = ymin = zmin = std::numeric_limits<double>::max();
   xmax = ymax = -std::numeric_limits<double>::max();
   for(unsigned int i = 0; i < mesh_msg->vertices.size(); i++)
   {
     xmin = std::min(double(mesh_msg->vertices[i].x),xmin);
     ymin = std::min(double(mesh_msg->vertices[i].y),ymin);
+    zmin = std::min(double(mesh_msg->vertices[i].z),zmin);
     xmax = std::max(double(mesh_msg->vertices[i].x),xmax);
     ymax = std::max(double(mesh_msg->vertices[i].y),ymax);
   }
@@ -357,10 +359,10 @@ bool MeshUtility::meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, doub
   {
     int x = (int)floor((mesh_msg->vertices[i].x - xmin)*cells_per_meter);
     int y = (int)floor((mesh_msg->vertices[i].y - ymin)*cells_per_meter);
-    double z = mesh_msg->vertices[i].z;
+    double z = mesh_msg->vertices[i].z - zmin;
     int idx = x + y*length;
     assert(!(idx >= length*width*height || idx < 0));
-    if(occupancy_map[idx] < z)
+    if(occupancy_map[idx] < z || occupancy_map[idx] == default_val)
     {
       occupancy_map[idx] = z;
     }
@@ -385,11 +387,11 @@ bool MeshUtility::meshToHeightMap(const shape_msgs::MeshConstPtr& mesh_msg, doub
       samplePointInTriangle(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z, &xs, &ys, &zs);
       int x = (int)floor((xs - xmin)*cells_per_meter);
       int y = (int)floor((ys - ymin)*cells_per_meter);
-      double z = zs;
+      double z = zs - zmin;
       
       int idx = x + y*length;
       assert(!(idx >= length*width*height || idx < 0));
-      if(occupancy_map[idx] < z)
+      if(occupancy_map[idx] < z || occupancy_map[idx] == default_val)
       {
         occupancy_map[idx] = z;
       }

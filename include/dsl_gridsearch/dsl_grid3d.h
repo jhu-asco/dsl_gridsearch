@@ -6,7 +6,10 @@
 #include <shape_msgs/Mesh.h>
 #include <nav_msgs/Path.h>
 
-#include "dsl/gridsearch3d.h"
+#include "dsl/gridsearch.h"
+#include "dsl/gridcost.h"
+#include "dsl/grid3d.h"
+#include "dsl/grid3dconnectivity.h"
 #include "dsl_gridsearch/occupancy_grid.h"
 
 
@@ -31,12 +34,16 @@ private:
   void publishOccupancyGrid();
 
   void planAllPaths();
-  nav_msgs::Path dslPathToRosMsg(const dsl::GridPath3D& dsl_path);
+  nav_msgs::Path dslPathToRosMsg(const dsl::GridPath<3>& dsl_path);
+  nav_msgs::Path dslPathToRosMsg(const std::vector<Eigen::Vector3d>& dsl_path);
   bool isPosInBounds(const Eigen::Vector3d& pos);
 
-  dsl::GridSearch3D* gdsl_;
-  dsl::GridPath3D path_, optpath_;
-  dsl::GridPath3DPlusTime splinepath_, splineoptpath_;
+  dsl::Grid3d* grid_;
+  dsl::GridCost<3> cost_;
+  dsl::Grid3dConnectivity* connectivity_;
+  dsl::GridSearch<3>* gdsl_;
+  dsl::GridPath<3> path_, optpath_, splinecells_, splineoptcells_;
+  std::vector<Eigen::Vector3d> splinepath_, splineoptpath_;
   OccupancyGrid* ogrid_;
 
   ros::NodeHandle nh_;
@@ -59,7 +66,7 @@ private:
 
   std::string mesh_filename_;
   double cells_per_meter_;
-  double spline_path_maxvelocity_;
+  double spline_step_;
   bool use_textured_mesh_;
   int grid_length_;
   int grid_width_;

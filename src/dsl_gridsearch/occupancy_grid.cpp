@@ -103,6 +103,16 @@ Vector3i OccupancyGrid::positionToGrid(const Vector3d& p)
   return g;
 }
 
+Vector3d OccupancyGrid::positionToDslPosition(const Vector3d& p)
+{
+  return p - getPmin();
+}
+
+Vector3d OccupancyGrid::gridToDslPosition(const Vector3i& p)
+{
+  return gridToPosition(p) - getPmin();
+}
+
 Vector3d OccupancyGrid::gridToPosition(const Vector3i& gp)
 {
   double xmin = this->getPmin()(0);

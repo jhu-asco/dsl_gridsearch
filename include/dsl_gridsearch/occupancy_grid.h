@@ -27,6 +27,8 @@ public:
   int positionToIndex(const Eigen::Vector3d& p);
   Eigen::Vector3i positionToGrid(const Eigen::Vector3d& p);
   Eigen::Vector3d gridToPosition(const Eigen::Vector3i& gp);
+  Eigen::Vector3d gridToDslPosition(const Eigen::Vector3i& p);
+  Eigen::Vector3d positionToDslPosition(const Eigen::Vector3d& p);
 
   Eigen::Vector3d getPmin();
   Eigen::Vector3d getPmax();

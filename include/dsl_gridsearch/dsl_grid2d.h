@@ -7,7 +7,9 @@
 #include <nav_msgs/Path.h>
 
 #include "dsl/gridsearch.h"
-#include "dsl/gridtravcost.h"
+#include "dsl/grid2d.h"
+#include "dsl/grid2dconnectivity.h"
+#include "dsl/gridcost.h"
 #include "dsl_gridsearch/occupancy_grid.h"
 
 
@@ -30,11 +32,14 @@ private:
   void publishOccupancyGrid();
 
   void planAllPaths();
-  nav_msgs::Path dslPathToRosMsg(const dsl::GridPath& dsl_path);
+  nav_msgs::Path dslPathToRosMsg(const dsl::GridPath<2>& dsl_path);
   bool isPosInBounds(const Eigen::Vector3d& pos);
 
-  dsl::GridSearch* gdsl_;
-  dsl::GridPath path_, optpath_;
+  dsl::Grid2d* grid_;
+  dsl::Grid2dConnectivity* connectivity_;
+  dsl::GridSearch<2>* gdsl_;
+  dsl::GridPath<2> path_, optpath_;
+  dsl::GridCost<2> cost_;
   OccupancyGrid* ogrid_;
 
   ros::NodeHandle nh_;
@@ -55,7 +60,6 @@ private:
   bool use_textured_mesh_;
   int grid_length_;
   int grid_width_;
-  dsl::GridTravCost gcost;
 };
 
 
