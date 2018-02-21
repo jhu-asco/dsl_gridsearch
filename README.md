@@ -14,6 +14,7 @@ Install the dsl library
     cd 
     git clone https://github.com/jhu-asco/dsl.git
     cd dsl
+    git checkout 61cf588668309e87de209cd95f03a0f792a16c33
     mkdir build
     cd build
     cmake ..
