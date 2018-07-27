@@ -22,6 +22,12 @@ Install the dsl library
 
 Run catkin_make from the workspace root directory, as usual.
 
+If you get linker errors related to trimesh, e.g.
+
+    undefined reference to trimesh::TriMesh::read(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)' collect2: error: ld returned 1 exit status dsl_gridsearch/CMakeFiles/dsl_grid3d_node.dir/build.make:120: recipe for target '/home/sam/robo/devel/lib/dsl_gridsearch/dsl_grid3d_node' failed make[2]: *** [/home/sam/robo/devel/lib/dsl_gridsearch/dsl_grid3d_node] Error 1 CMakeFiles/Makefile2:377: recipe for target 'dsl_gridsearch/CMakeFiles/dsl_grid3d_node.dir/all' failed
+
+then build trimesh2 (https://github.com/Forceflow/trimesh2.git) from source and copy the bin and include directory to extern/trimesh (See https://github.com/jhu-asco/dsl_gridsearch/issues/3)
+
 # DSL Grid3D
 
 ## Quickstart / Minimal Setup
